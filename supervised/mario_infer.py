@@ -6,7 +6,7 @@ from MarioEnvWrapper import MarioEnvWrapper  # 你的封装环境类
 # === 1. 初始化模型 ===
 num_actions = 13  # 或 len(COMPLEX_MOVEMENT)
 model = MarioBCModel(num_actions=num_actions)
-model.load_state_dict(torch.load("result/10-17-42/weights/best_model.pt"))  # , map_location="cpu"
+model.load_state_dict(torch.load("result/10-20-15/weights/best_model.pt"))  # , map_location="cpu"
 model.eval()
 
 print("model load over!")
@@ -21,13 +21,12 @@ env = MarioEnvWrapper(
 )
 
 # === 3. 推理控制循环 ===
-done = True
+done = False
+state = env.reset()  # (84, 84, 1)
+# print(state.shape)
+
 with torch.no_grad():
     while True:
-        if done:
-            state = env.reset()  # (84, 84, 1)
-
-        # print(state.shape)
         # === 格式转换：numpy -> torch ===
         state_tensor = torch.tensor(state, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0) / 255.0
         # shape: (1, 1, 84, 84)
@@ -40,6 +39,8 @@ with torch.no_grad():
         # === 环境执行 ===
         state, reward, done, info = env.step(action_id)
         env.render()
+        if done:
+            break
 
         # 控制帧率
         time.sleep(1 / 60)

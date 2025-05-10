@@ -7,12 +7,13 @@ from sklearn.metrics import precision_score, recall_score, f1_score, confusion_m
 import os
 from utils.metric_plot import plot_loss, plot_acc, plot_classify_metrics
 import time
+from utils.logger import save_training_config
 
 """
 save_dir: log save path
 """
 class TrainBase(abc.ABC):
-    def __init__(self, model, optimizer, criterion, scheduler, train_loader, val_loader, save_dir, draw=True, device=None, experiment_name=None):
+    def __init__(self, model, optimizer, criterion, scheduler, train_loader, val_loader, save_dir, draw=True, training_config=None, device=None, experiment_name=None):
         if experiment_name is None:
             experiment_name = time.strftime("%d-%H-%M", time.localtime())
 
@@ -31,6 +32,9 @@ class TrainBase(abc.ABC):
         self.draw = draw
         self.device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
+
+        if training_config is not None:
+            save_training_config(training_config, str(self.save_dir))
 
     def run(self, epochs: int, name: str):
         train_logs = []

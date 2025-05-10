@@ -11,36 +11,50 @@ from torch.nn import CrossEntropyLoss
 # 参数设置
 BASE_DIR = SUPERVISED_DATA_DIR
 SAVE_DIR = "result"
-num_actions = len(COMPLEX_MOVEMENT)
-batch_size = 32
-num_epochs = 10
-val_ratio = 0.2
-lr = 1e-3
-patience = 2
+NUM_ACTIONS = len(COMPLEX_MOVEMENT)
+BATCH_SIZE = 32
+NUM_EPOCHS = 150
+VAL_RATIO = 0.2
+LR = 1e-3
+PATIENCE = 2
 
-# 加载数据
-dataset = MarioDataset(BASE_DIR)
-train_set, val_set = train_valid_split(dataset, val_ratio=val_ratio)
 
-train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
+if __name__ == "__main__":
+    # 加载数据
+    dataset = MarioDataset(BASE_DIR)
+    train_set, val_set = train_valid_split(dataset, val_ratio=VAL_RATIO)
 
-# 初始化模型
-model = MarioBCModel(num_actions)
-optimizer = Adam(model.parameters(), lr=lr)
-criterion = CrossEntropyLoss()
-scheduler = ReduceLROnPlateau(optimizer, mode="min", patience=patience)
+    train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader = DataLoader(val_set, batch_size=BATCH_SIZE, shuffle=False)
 
-# 实例化 Trainer 并运行
-trainer = MarioTrainer(
-    model=model,
-    optimizer=optimizer,
-    criterion=criterion,
-    scheduler=scheduler,
-    train_loader=train_loader,
-    val_loader=val_loader,
-    save_dir=SAVE_DIR,
-    draw=True,
-)
+    # 初始化模型
+    model = MarioBCModel(NUM_ACTIONS)
+    optimizer = Adam(model.parameters(), lr=LR)
+    criterion = CrossEntropyLoss()
+    scheduler = ReduceLROnPlateau(optimizer, mode="min", patience=PATIENCE)
 
-train_logs, val_logs = trainer.run(epochs=num_epochs, name="mario_behavior_clone")
+    # 保存参数日志
+    training_config = {
+        "BASE_DIR": BASE_DIR,
+        "NUM_ACTIONS": NUM_ACTIONS,
+        "BATCH_SIZE": BATCH_SIZE,
+        "NUM_EPOCHS": NUM_EPOCHS,
+        "VAL_RATIO": VAL_RATIO,
+        "LR": LR,
+        "PATIENCE": PATIENCE
+    }
+
+    # 实例化 Trainer 并运行
+    trainer = MarioTrainer(
+        model=model,
+        optimizer=optimizer,
+        criterion=criterion,
+        scheduler=scheduler,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        save_dir=SAVE_DIR,
+        draw=True,
+        training_config=training_config,
+    )
+
+    train_logs, val_logs = trainer.run(epochs=NUM_EPOCHS, name="mario_behavior_clone")
