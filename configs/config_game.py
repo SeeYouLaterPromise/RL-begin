@@ -1,4 +1,10 @@
+# import sys
+# import os
+# sys.stdout = open(os.devnull, 'w')  # 彻底屏蔽, 太极端，所有打印都屏蔽
 import pygame
+
+# supervised folder 下面数据集文件夹名称
+SUPERVISED_DATA_DIR = "mario_data"
 
 # 人类视角，游戏窗口大小
 TARGET_WIDTH, TARGET_HEIGHT = 720, 640

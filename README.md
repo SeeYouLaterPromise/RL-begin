@@ -34,20 +34,38 @@ output: action_id
 ### Data Collection
 `collect_data.py`: Designed for collecting data.
 
-使用须知：
+玩家使用须知：
 - 你可以自己**设定关卡**进行收集训练数据。
 - 每当**通关**或**死亡**会结束数据采集。
 
-数据设置：
+采集数据设置：
 - grayscale
 - resize: `RESIZE_SHAPE = (84, 84)`
 - frame skipping / subsampling: `FRAME_SKIP = 4 `
+- recording after first moving: 检查是否开始采集: 玩家开始移动，开始采集数据
 
 
 数据集文件夹结构：
-- supervised/mario_data
-  - level (e.g. 1-1)
-    - experment-start-time [e.g. 10(Day)-12(Hour)-37(Minute)]
+```
+supervised/
+└── mario_data/ --------------- Total
+    ├── 1-1/  ----------------- Level (关卡)
+    │   ├── 10-12-37/ --------- Exp   (实验)
+    │   │   ├── frames/ ------- Image
+    │   │   └── trajectory.json
+    │   ├── 11-09-05/
+    │   │   ├── frames/
+    │   │   └── trajectory.json
+    ├── 1-2/
+    │   └── 10-13-00/
+    │       ├── frames/
+    │       └── trajectory.json
+```
+
+`MarioDataset.py` defines the `MarioDataset` class and the `train_val_split` function, both of which are used for data preparation prior to training.
+
+### Training
+`MarioTrainer.py` implements a subclass of `ClassifyTrainBase` with built-in functionalities for logging and plotting during training.
 
 
 ## Unsupervised
