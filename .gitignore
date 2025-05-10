@@ -1,0 +1,17 @@
+# Python 全局缓存
+*.pyc
+__pycache__/
+
+# VSCode/PyCharm 配置文件
+.vscode/
+.idea/
+
+# macOS 系统自动生成的隐藏文件
+.DS_Store
+**/.DS_Store
+
+# 模型权重文件
+*.pt
+
+# dataset
+supervised/mario_data
