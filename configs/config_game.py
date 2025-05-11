@@ -1,10 +1,12 @@
 # import sys
-# import os
+import os
 # sys.stdout = open(os.devnull, 'w')  # 彻底屏蔽, 太极端，所有打印都屏蔽
 import pygame
 
-# supervised folder 下面数据集文件夹名称
-SUPERVISED_DATA_DIR = "mario_data"
+# === 自适应项目根路径，确保路径保存正确 === 消除vscode和pycharm处理相对路径的差异问题
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+SUPERVISED_DATA_DIR = os.path.abspath(os.path.join(PROJECT_ROOT, "supervised", "mario_data"))
+RESULT_SAVE_DIR = os.path.abspath(os.path.join(PROJECT_ROOT, "supervised", "result"))
 
 # 人类视角，游戏窗口大小
 TARGET_WIDTH, TARGET_HEIGHT = 720, 640
@@ -14,16 +16,16 @@ COMPLEX_MOVEMENT = [
     ['NOOP'],  # stay
     ['right'],
     ['right', 'A'],
-    ['right', 'B'],
-    ['right', 'A', 'B'],
+    # ['right', 'B'],
+    # ['right', 'A', 'B'],
     ['A'],
     ['left'],
     ['left', 'A'],
-    ['left', 'B'],
-    ['left', 'A', 'B'],
-    ['down'],
-    ['up'],
-    ['B']
+    # ['left', 'B'],
+    # ['left', 'A', 'B'],
+    # ['down'],
+    # ['up'],
+    # ['B']
 ]
 
 # 监听键盘绑定

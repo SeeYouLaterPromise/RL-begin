@@ -1,16 +1,20 @@
 from torch.utils.data import DataLoader
-from configs.config_game import COMPLEX_MOVEMENT, SUPERVISED_DATA_DIR
 from MarioDataset import MarioDataset, train_valid_split
 from MarioBCModel import MarioBCModel
 from MarioTrainer import MarioTrainer
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.nn import CrossEntropyLoss
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from configs.config_game import COMPLEX_MOVEMENT, SUPERVISED_DATA_DIR, RESULT_SAVE_DIR
+
 
 
 # 参数设置
 BASE_DIR = SUPERVISED_DATA_DIR
-SAVE_DIR = "result"
+SAVE_DIR = RESULT_SAVE_DIR
 NUM_ACTIONS = len(COMPLEX_MOVEMENT)
 BATCH_SIZE = 32
 NUM_EPOCHS = 150

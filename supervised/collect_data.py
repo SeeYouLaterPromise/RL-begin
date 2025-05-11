@@ -1,21 +1,25 @@
 ﻿from gym_super_mario_bros import make
 from nes_py.wrappers import JoypadSpace
 import numpy as np
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from configs.config_game import *
 import cv2
 import time
 import json
-import os
+
 
 # 可自定义关卡编号
 WORLD = 1
 STAGE = 1
 LEVEL_NAME = f"SuperMarioBros-{WORLD}-{STAGE}-v0"
 
+
 # 获取当前时间并格式化为字符串
 experiment_time = time.strftime("%d-%H-%M", time.localtime())
-
-# 数据保存路径
 save_dir = f"{SUPERVISED_DATA_DIR}/{WORLD}-{STAGE}/{experiment_time}"
 trajectory_name = "trajectory.json"
 frame_dir = os.path.join(save_dir, "frames")
@@ -28,6 +32,27 @@ RESIZE_SHAPE = (84, 84)
 # 每隔4帧采集一帧
 FRAME_SKIP = 4
 
+def update_save(state, frame_count, current_action, done):
+    # ==== 图像保存：灰度 + 缩放 ==== (无需转置，直接用 state)
+    gray = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
+    resized = cv2.resize(gray, RESIZE_SHAPE, interpolation=cv2.INTER_AREA)
+    filename = f"frame_{frame_count:06d}.png"
+    filepath = os.path.join(frame_dir, filename)
+    cv2.imwrite(filepath, resized)
+
+    # 保存轨迹信息
+    trajectory.append({
+        "frame_id": frame_count,
+        "image_file": os.path.join(frame_dir, filename),
+        "action": current_action,
+        "timestamp": time.time(),
+        "is_dead": done
+    })
+    
+
+"""
+You only have one life.
+"""
 if __name__ == "__main__":
     # 环境初始化
     env = make(LEVEL_NAME)
@@ -51,9 +76,6 @@ if __name__ == "__main__":
             continue
             # print("⚠️ 窗口失去焦点...")
 
-        if done:
-            break
-
         # 构造当前按键组合 （键盘监听符合定义的键盘按键）
         pressed = pygame.key.get_pressed()
         pressed_buttons = set()
@@ -76,7 +98,13 @@ if __name__ == "__main__":
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 running = False
 
-        state, _, done, _ = env.step(current_action)
+        state, reward, done, info = env.step(current_action)
+        
+        if done:
+            update_save(state, frame_count, current_action, done)
+            # only one life
+            break
+
 
         # 渲染显示（彩色缩放）- 人类
         frame = np.transpose(state, (1, 0, 2))  # 转为 (宽, 高, 通道)
@@ -94,37 +122,33 @@ if __name__ == "__main__":
                 started_recording = True
             else:
                 continue  # 尚未移动，不采集
+        
+        
 
         # Frame-skipping
         if total_count % FRAME_SKIP == 0:
-            # ==== 图像保存：灰度 + 缩放 ==== (无需转置，直接用 state)
-            gray = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
-            resized = cv2.resize(gray, RESIZE_SHAPE, interpolation=cv2.INTER_AREA)
-            filename = f"frame_{frame_count:06d}.png"
-            filepath = os.path.join(frame_dir, filename)
-            cv2.imwrite(filepath, resized)
 
-            # 保存轨迹信息
-            trajectory.append({
-                "frame_id": frame_count,
-                "image_file": os.path.join(frame_dir, filename),
-                "action": current_action,
-                "timestamp": time.time()
-            })
+            update_save(state, frame_count, current_action, done)
 
             # don't forget it
             frame_count += 1
 
         clock.tick(60)  # clock.tick(60)
 
-    if started_recording:
-        # 保存 JSON 轨迹数据
-        json_path = os.path.join(save_dir, trajectory_name)
-        with open(json_path, "w") as f:
-            json.dump(trajectory, f, indent=2)
-        print(f"数据采集完成，共采集 {frame_count} 帧，保存至：{save_dir}")
-    else:
-        print("You haven't move a bit! We refused to collecting data.")
+    # print(done)
+    # 目标路径迁移
+    # result_type = "failure" if done else "success"
+    # new_dir = os.path.join(SUPERVISED_DATA_DIR, result_type, f"{WORLD}-{STAGE}", experiment_time)
+    # os.makedirs(os.path.dirname(new_dir), exist_ok=True)
+    # os.rename(save_dir, new_dir)
+    # os.removedirs(frame_dir)
+    # print(f"📦 数据已移动至：{new_dir}")
+
+    # 游戏循环结束后，保存 JSON 轨迹数据
+    json_path = os.path.join(save_dir, trajectory_name)
+    with open(json_path, "w") as f:
+        json.dump(trajectory, f, indent=2)
+    print(f"✅ 数据采集完成，共采集 {frame_count} 帧")
 
 
     env.close()

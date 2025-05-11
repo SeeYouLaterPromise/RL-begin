@@ -11,15 +11,25 @@ def plot_loss(train_df, test_df, save_dir, name):
 
     if test_df is not None:
         plt.plot(test_df['Epoch'], test_df['Test Loss'], label='Test Loss')
+    
+    if name is None or "":
+        name = ""
+    else:
+        name = name + "_"
 
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Loss Curve')
     plt.legend()
-    plt.savefig(f'{save_dir}/{name}_loss_plot.png')
+    plt.savefig(f'{save_dir}/{name}loss_plot.png')
     plt.close()
 
 def plot_acc(train_df, test_df, save_dir, name):
+    if name is None or "":
+        name = ""
+    else:
+        name = name + "_"
+
     plt.figure(figsize=(10, 6))
     plt.plot(train_df['Epoch'], train_df['Train Accuracy'], label='Train Accuracy')
     plt.plot(test_df['Epoch'], test_df['Test Accuracy'], label='Test Accuracy')
@@ -32,12 +42,17 @@ def plot_acc(train_df, test_df, save_dir, name):
     plt.ylabel('Accuracy (%)')
     plt.title('Training and Test Accuracy')
     plt.legend()
-    plt.savefig(f'{save_dir}/{name}_accuracy_plot.png')
+    plt.savefig(f'{save_dir}/{name}accuracy_plot.png')
     plt.close()
 
 
 def plot_classify_metrics(test_df, save_dir, name):
     """Generate and save plots for training and test metrics."""
+
+    if name is None or "":
+        name = ""
+    else:
+        name = name + "_"
 
     # Plot Precision, Recall, and F1 Score
     plt.figure(figsize=(10, 6))
@@ -60,5 +75,5 @@ def plot_classify_metrics(test_df, save_dir, name):
     plt.ylabel('Score')
     plt.title('Test Precision, Recall, and F1 Score')
     plt.legend()
-    plt.savefig(f'{save_dir}/{name}_metrics_plot.png')
+    plt.savefig(f'{save_dir}/{name}metrics_plot.png')
     plt.close()
