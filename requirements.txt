@@ -1,7 +1,7 @@
 setuptools==65.5.0
 wheel==0.38.4
 
-gym
+gym==0.21.0
 gym-super-mario-bros==7.3.0
 
 tensorboard
