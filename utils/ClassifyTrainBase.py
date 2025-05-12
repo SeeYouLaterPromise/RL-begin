@@ -6,16 +6,13 @@ import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 import os
 from utils.metric_plot import plot_loss, plot_acc, plot_classify_metrics
-import time
 from utils.logger import save_training_config
 
 """
 save_dir: log save path
 """
 class TrainBase(abc.ABC):
-    def __init__(self, model, optimizer, criterion, scheduler, train_loader, val_loader, save_dir, draw=True, training_config=None, device=None, experiment_name=None):
-        if experiment_name is None:
-            experiment_name = time.strftime("%d-%H-%M", time.localtime())
+    def __init__(self, model, optimizer, criterion, scheduler, train_loader, val_loader, save_dir, draw=True, training_config=None, device=None):
 
         self.model = model
         self.optimizer = optimizer
@@ -23,8 +20,7 @@ class TrainBase(abc.ABC):
         self.scheduler = scheduler
         self.train_loader = train_loader
         self.val_loader = val_loader
-        self.save_dir = os.path.join(save_dir, experiment_name)
-        os.makedirs(self.save_dir, exist_ok=True)
+        self.save_dir = save_dir
         weight_path = os.path.join(str(self.save_dir), "weights")
         os.makedirs(weight_path, exist_ok=True)
         self.last_model_path = os.path.join(str(weight_path), "last_model.pt")
@@ -60,7 +56,7 @@ class TrainBase(abc.ABC):
         best_df.to_csv(f'{self.save_dir}/{name}_best_test_logs.csv', index=False)
 
         if self.draw:
-            plot_loss(train_df, val_df, self.save_dir, name)
+            plot_loss(train_df, val_df, self.save_dir, name=name)
             plot_acc(train_df, val_df, self.save_dir, name)
             plot_classify_metrics(val_df, self.save_dir, name)
 

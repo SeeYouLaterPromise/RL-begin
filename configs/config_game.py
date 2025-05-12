@@ -5,8 +5,11 @@ import pygame
 
 # === 自适应项目根路径，确保路径保存正确 === 消除vscode和pycharm处理相对路径的差异问题
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+SUPERVISED_DIR = os.path.abspath(os.path.join(PROJECT_ROOT, "supervised"))
 SUPERVISED_DATA_DIR = os.path.abspath(os.path.join(PROJECT_ROOT, "supervised", "mario_data"))
 RESULT_SAVE_DIR = os.path.abspath(os.path.join(PROJECT_ROOT, "supervised", "result"))
+SUCCESS = "trajectory_success.json"
+FAILURE = "trajectory_failure.json"
 
 # 人类视角，游戏窗口大小
 TARGET_WIDTH, TARGET_HEIGHT = 720, 640

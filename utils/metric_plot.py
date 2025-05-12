@@ -5,27 +5,35 @@ import matplotlib.pyplot as plt
               'Precision', 'Precision Std', 'Recall', 
               'Recall Std', 'F1 Score', 'F1 Score Std' """
 
-def plot_loss(train_df, test_df, save_dir, name):
+def plot_loss_helper(df, plot_ls):
+    for plot_cell in plot_ls:
+        if plot_cell in df.columns:
+            plt.plot(df['Epoch'], df[plot_cell], label=plot_cell)
+        else:
+            print(f"[Warning] '{plot_cell}' not found in DataFrame.")
+
+def plot_loss(train_df, test_df, save_dir, train_plot_ls=['Train Loss'], test_plot_ls=['Test Loss'], name=None):
+    import os
     plt.figure(figsize=(10, 6))
-    plt.plot(train_df['Epoch'], train_df['Train Loss'], label='Train Loss')
 
+    plot_loss_helper(train_df, train_plot_ls)
     if test_df is not None:
-        plt.plot(test_df['Epoch'], test_df['Test Loss'], label='Test Loss')
-    
-    if name is None or "":
-        name = ""
-    else:
-        name = name + "_"
+        plot_loss_helper(test_df, test_plot_ls)
 
+    name = f"{name}_" if name else ""
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Loss Curve')
     plt.legend()
-    plt.savefig(f'{save_dir}/{name}loss_plot.png')
+    plt.grid(True)
+
+    save_path = os.path.join(save_dir, f"{name}loss_plot.png")
+    plt.savefig(save_path)
     plt.close()
 
-def plot_acc(train_df, test_df, save_dir, name):
-    if name is None or "":
+
+def plot_acc(train_df, test_df, save_dir, name=None):
+    if not name:
         name = ""
     else:
         name = name + "_"
@@ -46,13 +54,14 @@ def plot_acc(train_df, test_df, save_dir, name):
     plt.close()
 
 
-def plot_classify_metrics(test_df, save_dir, name):
+def plot_classify_metrics(test_df, save_dir, name=None):
     """Generate and save plots for training and test metrics."""
 
-    if name is None or "":
+    if not name:
         name = ""
     else:
         name = name + "_"
+
 
     # Plot Precision, Recall, and F1 Score
     plt.figure(figsize=(10, 6))

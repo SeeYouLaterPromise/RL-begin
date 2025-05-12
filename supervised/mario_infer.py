@@ -1,12 +1,17 @@
 import torch
 import time
 from MarioBCModel import MarioBCModel  # 你的模型定义
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from MarioEnvWrapper import MarioEnvWrapper  # 你的封装环境类
+from configs.config_game import SUPERVISED_DIR, COMPLEX_MOVEMENT
 
 # === 1. 初始化模型 ===
-num_actions = 13  # 或 len(COMPLEX_MOVEMENT)
+num_actions = 13 # len(COMPLEX_MOVEMENT)
 model = MarioBCModel(num_actions=num_actions)
-model.load_state_dict(torch.load("result/10-20-15/weights/best_model.pt"))  # , map_location="cpu"
+model_path = os.path.abspath(os.path.join(SUPERVISED_DIR, "result/10-20-31/weights/best_model.pt"))
+model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))  # , map_location="cpu"
 model.eval()
 
 print("model load over!")

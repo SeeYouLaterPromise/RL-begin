@@ -124,6 +124,8 @@ supervised/
 
 `MarioDataset.py` defines the `MarioDataset` class and the `train_val_split` function, both of which are used for data preparation prior to training.
 
+我现在已经实现了下面的数据集文件夹结构，将是否存在死亡帧的实验记录标注处理（通过命名 json 文件）trajectory_failure.json 中最后一条数据的 is_dead 为 true，即死亡帧。我现在在思考：死亡帧是不是由于在死亡帧发生的前一段时间玩家的错误判断导致的，所以这些帧是不是也要让 agent 作为反面教材学习？考虑到人的反应时间（假设 1s），跳帧（4 帧）和帧率（FPS=60），所以死亡帧前 15 帧是否需要让 agent 作为反面教材学习？
+
 ### Training
 
 `MarioTrainer.py` implements a subclass of `ClassifyTrainBase` with built-in functionalities for logging and plotting during training.
