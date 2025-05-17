@@ -1,28 +1,36 @@
 import torch
 import time
 from MarioBCModel import MarioBCModel  # 你的模型定义
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from MarioEnvWrapper import MarioEnvWrapper  # 你的封装环境类
-from configs.config_game import SUPERVISED_DIR, COMPLEX_MOVEMENT
+from configs.config_game import COMPLEX_MOVEMENT
+
+# 可自定义关卡编号
+WORLD = 1
+STAGE = 1
+LEVEL_NAME = f"SuperMarioBros-{WORLD}-{STAGE}-v0"
+
+FRAME_STACK = 8  #帧堆叠数
 
 # === 1. 初始化模型 ===
-num_actions = 13 # len(COMPLEX_MOVEMENT)
-model = MarioBCModel(num_actions=num_actions)
-model_path = os.path.abspath(os.path.join(SUPERVISED_DIR, "result/10-20-31/weights/best_model.pt"))
-model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))  # , map_location="cpu"
+num_actions = len(COMPLEX_MOVEMENT)
+model = MarioBCModel(num_actions=num_actions, frame_stack=FRAME_STACK)
+#state_dict = torch.load("result/11-17-16/weights/best_model.pt", map_location=torch.device('cpu'))
+state_dict = torch.load("result/17-19-24/weights/last_model.pt", map_location=torch.device('cpu'),weights_only=True)
+model.load_state_dict(state_dict)
 model.eval()
 
 print("model load over!")
 
 # === 2. 初始化 Mario 环境 ===
+
 env = MarioEnvWrapper(
+    level=LEVEL_NAME,
     movement='complex',
     grayscale=True,
     resize_shape=(84, 84),
     frame_skip=4,
-    render_mode=True  # 控制是否实时渲染
+    render_mode=True,  # 控制是否实时渲染
+    frame_stack=FRAME_STACK
 )
 
 # === 3. 推理控制循环 ===
@@ -39,7 +47,7 @@ with torch.no_grad():
         # === 模型推理动作 ===
         logits = model(state_tensor)
         action_id = torch.argmax(logits, dim=1).item()
-        # print(action_id)
+        print(action_id)
 
         # === 环境执行 ===
         state, reward, done, info = env.step(action_id)

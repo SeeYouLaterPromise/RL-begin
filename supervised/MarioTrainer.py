@@ -8,7 +8,7 @@ import os
 
 class MarioTrainer(TrainBase):
     def __init__(self, model, optimizer, criterion, scheduler, train_loader, val_loader,
-                 save_dir, penalty_mode, penalty_weight=0.5, penalty_type="maxprob", draw=True, training_config=None, device=None):
+                 save_dir, penalty_mode="False", penalty_weight=0.5, penalty_type="maxprob", draw=True, training_config=None, device=None):
         
         # 正确地调用父类构造函数
         super().__init__(

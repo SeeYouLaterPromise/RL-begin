@@ -10,13 +10,12 @@ from configs.config_game import *
 import cv2
 import time
 import json
-
+import pygame
 
 # 可自定义关卡编号
 WORLD = 1
 STAGE = 1
 LEVEL_NAME = f"SuperMarioBros-{WORLD}-{STAGE}-v0"
-
 
 # 获取当前时间并格式化为字符串
 experiment_time = time.strftime("%d-%H-%M", time.localtime())
@@ -24,13 +23,13 @@ save_dir = f"{SUPERVISED_DATA_DIR}/{WORLD}-{STAGE}/{experiment_time}"
 frame_dir = os.path.join(save_dir, "frames")
 os.makedirs(frame_dir, exist_ok=True)
 
-# 图像目标尺寸（灰度）
+# 图像目标尺寸（灰度）k
 RESIZE_SHAPE = (84, 84)
 
 # 每隔4帧采集一帧
 FRAME_SKIP = 4
 
-def update_save(state, frame_count, trajectory, current_action, is_dead):
+def update_save(state, frame_count, trajectory, current_action, is_dead, info):
     # ==== 图像保存：灰度 + 缩放 ==== (无需转置，直接用 state)
     gray = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
     resized = cv2.resize(gray, RESIZE_SHAPE, interpolation=cv2.INTER_AREA)
@@ -38,20 +37,20 @@ def update_save(state, frame_count, trajectory, current_action, is_dead):
     filepath = os.path.join(frame_dir, filename)
     cv2.imwrite(filepath, resized)
 
-    # 保存轨迹信息
+    # 保存轨迹信息（添加x_pos和y_pos）
     trajectory.append({
-        "frame_id": frame_count,
-        "image_file": os.path.join(frame_dir, filename),
-        "action": current_action,
+        "frame_id": int(frame_count),
+        "image_file": filepath,
+        "action": int(current_action),
         "timestamp": time.time(),
-        "is_dead": is_dead
+        "is_dead": bool(is_dead),
+        "x_pos": int(info['x_pos']),  # 添加x坐标
+        "y_pos": int(info['y_pos'])   # 添加y坐标
     })
-
     return trajectory
 
-
 def game_loop():
-    # 环境初始化
+    # 环境初始化dd
     env = make(LEVEL_NAME)
     env = JoypadSpace(env, COMPLEX_MOVEMENT)
 
@@ -60,32 +59,26 @@ def game_loop():
     screen = pygame.display.set_mode((TARGET_WIDTH, TARGET_HEIGHT))
     clock = pygame.time.Clock()
 
-    # done = False
-    # AssertionError: Cannot call env.step() before calling reset()
     state = env.reset()
     running = True
     total_count = 0
     frame_count = 0
     started_recording = False
-
-    # 帧图片对应的轨迹
     trajectory = []
     status = "NOOP"
-
 
     while running:
         if not pygame.key.get_focused():
             continue
-            # print("⚠️ 窗口失去焦点...")
 
-        # 构造当前按键组合 （键盘监听符合定义的键盘按键）
+        # 构造当前按键组合
         pressed = pygame.key.get_pressed()
         pressed_buttons = set()
         for key, button in KEY_TO_MARIO_BUTTON.items():
             if pressed[key]:
                 pressed_buttons.add(button)
 
-        # 查找动作编号（将键盘按键转换成动作空间的编号）
+        # 查找动作编号
         current_action = 0
         for i, combo in enumerate(COMPLEX_MOVEMENT):
             if set(combo) == pressed_buttons:
@@ -102,76 +95,47 @@ def game_loop():
 
         # update game frame
         state, reward, done, info = env.step(current_action)
-        
-        # （损失一次生命 或 通关） 都会结束循环
-        # print(f"{info['life']}, type: {type(info['life'])}")
-        # is_dead = True if info['life'] < 2 else False
-        # status = "failure" if is_dead else "success"
-        # if info['life'] < 2:
-        #     print("hereee!")
-        # print(info)
-        # info['life'] 在游戏结束后可能不会立即减少，done=True 时 life 可能仍是 2（即生命还在 UI 上未刷新）
         is_success = info['flag_get']
         status = "success" if is_success else "failure"
 
-        
         # 结束帧
         if done:
-            trajectory = update_save(state, frame_count, trajectory, current_action, is_dead=not is_success)
-            # only one life
+            trajectory = update_save(state, frame_count, trajectory, current_action, is_dead=not is_success, info=info)
             break
 
-
-        # 渲染显示（彩色缩放）- 人类
-        frame = np.transpose(state, (1, 0, 2))  # 转为 (宽, 高, 通道)
-        surface = pygame.surfarray.make_surface(frame)  # 将 NumPy 图像转为 Pygame 可渲染的对象
-        scaled = pygame.transform.scale(surface, (TARGET_WIDTH, TARGET_HEIGHT))  # 放大图像，适配你的 pygame 窗口尺寸
-        screen.blit(scaled, (0, 0))  ## 把图像贴到屏幕上（坐标位置（0， 0））
-        pygame.display.update()  # 刷新窗口，真正的显示新的一帧
+        # 渲染显示
+        frame = np.transpose(state, (1, 0, 2))
+        surface = pygame.surfarray.make_surface(frame)
+        scaled = pygame.transform.scale(surface, (TARGET_WIDTH, TARGET_HEIGHT))
+        screen.blit(scaled, (0, 0))
+        pygame.display.update()
         total_count += 1
 
-        # 检查是否开始采集: 玩家开始移动，开始采集数据
+        # 检查是否开始采集
         if not started_recording:
             if current_action != 0:
-                # print("玩家开始移动，开始采集数据")
                 print('play moving, starting collecting data')
                 started_recording = True
             else:
-                continue  # 尚未移动，不采集
-        
-        # Frame-skipping: 默认每四帧取最后一帧
+                continue
+
+        # Frame-skipping
         if total_count % FRAME_SKIP == 0:
-
-            # 能走到这都是还活着，还没通关
-            trajectory = update_save(state, frame_count, trajectory, current_action, False)
-
-            # don't forget it
+            trajectory = update_save(state, frame_count, trajectory, current_action, False, info)
             frame_count += 1
 
-        clock.tick(60)  # clock.tick(60)
-    
-    # exit the game loop
-    env.close()
+        clock.tick(60)
 
+    env.close()
     return trajectory, frame_count, status
 
-"""
-You only have one life.
-"""
 if __name__ == "__main__":
-    # game loop
     trajectory, frame_count, status = game_loop()
 
-    # print(done)
-    # done: False (active exit the game); True (lose life / get through)
-
-    # 游戏循环结束后，保存 JSON 轨迹数据
     trajectory_name = f"trajectory_{status}.json"
     json_path = os.path.join(save_dir, trajectory_name)
     with open(json_path, "w") as f:
         json.dump(trajectory, f, indent=2)
     print(f"✅ 数据采集完成，共采集 {frame_count} 帧")
 
-
-    
     pygame.quit()

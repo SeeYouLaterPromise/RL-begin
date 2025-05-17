@@ -2,14 +2,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class MarioBCModel(nn.Module):
-    def __init__(self, num_actions):
+    def __init__(self, num_actions, frame_stack=4):  # 添加frame_stack参数
         super(MarioBCModel, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(1, 32, 8, stride=4),  # [batch, 32, 20, 20]
+            nn.Conv2d(frame_stack, 32, 8, stride=4),  # 输入通道改为frame_stack
             nn.ReLU(),
-            nn.Conv2d(32, 64, 4, stride=2),  # [batch, 64, 9, 9]
+            nn.Conv2d(32, 64, 4, stride=2),
             nn.ReLU(),
-            nn.Conv2d(64, 64, 3, stride=1),  # [batch, 64, 7, 7]
+            nn.Conv2d(64, 64, 3, stride=1),
             nn.ReLU()
         )
         self.fc = nn.Sequential(
