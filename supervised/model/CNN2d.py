@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-class MarioBCModel(nn.Module):
-    def __init__(self, num_actions, frame_stack=4):  # 添加frame_stack参数
-        super(MarioBCModel, self).__init__()
+class CNN2d(nn.Module):
+    def __init__(self, num_actions):
+        super(CNN2d, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(frame_stack, 32, 8, stride=4),  # 输入通道改为frame_stack
+            nn.Conv2d(1, 32, 8, stride=4), 
             nn.ReLU(),
             nn.Conv2d(32, 64, 4, stride=2),
             nn.ReLU(),

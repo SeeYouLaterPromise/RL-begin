@@ -1,6 +1,6 @@
 import torch
 import time
-from MarioBCModel import MarioBCModel  # 你的模型定义
+from supervised.model.CNN2D import MarioBCModel  # 你的模型定义
 from MarioEnvWrapper import MarioEnvWrapper  # 你的封装环境类
 from configs.config_game import COMPLEX_MOVEMENT
 

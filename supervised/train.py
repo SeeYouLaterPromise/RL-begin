@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 from MarioDataset import MarioDataset, train_valid_split
-from MarioBCModel import MarioBCModel
+from supervised.model.CNN2D import MarioBCModel
 from MarioTrainer import MarioTrainer
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau

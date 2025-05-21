@@ -58,8 +58,8 @@ class MarioDataset(Dataset):
                 curr_y = entry.get("y_pos", -1)
                 action = entry["action"]
 
-                # 跳过未移动帧（例如站着按右/跳）
-                if curr_x == prev_x and curr_y == prev_y and action in [0, 1, 4]:
+                # 跳过（未移动）且（待着不动）帧 或者 按了移动但是却没有位置坐标变化
+                if curr_x == prev_x and curr_y == prev_y and action == [0, 1, 4]:
                     continue  # 跳过当前帧
 
                 prev_x, prev_y = curr_x, curr_y  # 更新上一次的位置
@@ -67,9 +67,8 @@ class MarioDataset(Dataset):
                 sample = {
                     "image": img_path,
                     "action": entry["action"],
-                    "x_pos": entry["x_pos"],  # 添加坐标信息
-                    "y_pos": entry["y_pos"]
                 }
+
                 if penalty_mode:
                     sample["is_critical"] = entry.get("is_dead", False)
                 self.samples.append(sample)
