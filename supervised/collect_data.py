@@ -15,7 +15,7 @@ import pygame
 # 可自定义关卡编号
 WORLD = 1
 STAGE = 1
-LEVEL_NAME = f"SuperMarioBros-{WORLD}-{STAGE}-v0"
+LEVEL_NAME = f"SuperMarioBros-{WORLD}-{STAGE}-v1"
 
 # 获取当前时间并格式化为字符串
 experiment_time = time.strftime("%d-%H-%M", time.localtime())
