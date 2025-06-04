@@ -1,3 +1,4 @@
+from supervised.ExamManager import ExamManager
 from utils.ClassifyTrainBase import TrainBase
 import torch
 from tqdm import tqdm
@@ -97,7 +98,7 @@ class MarioTrainer(TrainBase):
             preds = outputs.argmax(dim=1)                # 分类预测
         return loss, preds, targets
 
-    def val_step(self, batch):
+    def val_step(self, batch, render=False):
         if self.penalty_mode:
             imgs, targets, is_critical = batch
             imgs, targets, is_critical = imgs.to(self.device), targets.to(self.device), is_critical.to(self.device)
@@ -111,8 +112,9 @@ class MarioTrainer(TrainBase):
             loss = self.loss(outputs, targets)
             preds = outputs.argmax(dim=1)
         return loss, preds, targets
-    
-    
+
+
+
     def train_epoch(self, epoch):
         self.model.train()
         running_loss, correct, total = 0.0, 0, 0
@@ -169,8 +171,9 @@ class MarioTrainer(TrainBase):
 
 
 
-    def val_epoch(self, epoch, best_test_logs, best_test_accuracy):
+    def val_epoch(self, epoch, best_test_logs, best_mean_distance):
         self.model.eval()
+
         test_loss, correct, total = 0.0, 0, 0
         all_preds, all_tgts = [], []
         batch_accs, batch_ps, batch_rs, batch_fs = [], [], [], []
@@ -179,18 +182,7 @@ class MarioTrainer(TrainBase):
 
         with torch.no_grad():
             for batch in self.val_loader:
-                if self.penalty_mode:
-                    imgs, targets, is_critical = batch
-                    imgs, targets, is_critical = imgs.to(self.device), targets.to(self.device), is_critical.to(self.device)
-                    outputs = self.model(imgs)
-                    loss = self.loss(outputs, targets, is_critical)
-                else:
-                    imgs, targets = batch
-                    imgs, targets = imgs.to(self.device), targets.to(self.device)
-                    outputs = self.model(imgs)
-                    loss = self.loss(outputs, targets, None)
-
-                preds = outputs.argmax(dim=1)
+                loss, preds, targets = self.val_step(batch)
                 test_loss += loss.item()
 
                 all_preds.extend(preds.cpu().numpy())
@@ -229,22 +221,19 @@ class MarioTrainer(TrainBase):
         prec_std = np.std(batch_ps)
         rec_std = np.std(batch_rs)
         f1_std = np.std(batch_fs)
+        self.scheduler.step(test_loss)
 
-        print(f" Val:   loss={test_loss:.4f}, acc={test_acc:.2f}% (±{test_acc_std:.2f}), "
-            f"prec={prec:.2f}(±{prec_std:.2f}), rec={rec:.2f}(±{rec_std:.2f}), "
-            f"f1={f1:.2f}(±{f1_std:.2f}) | BC={bc_loss:.4f}, Penalty={penalty_loss:.4f}")
 
-        # 可视化：本轮验证中每 batch 的 bc 和 penalty loss 变化曲线（可选）
-        # if self.draw:
-        #     plt.plot(bc_losses, label="BC Loss")
-        #     plt.plot(penalty_losses, label="Penalty Loss")
-        #     plt.title(f"Validation Loss Composition (Epoch {epoch})")
-        #     plt.xlabel("Batch Index")
-        #     plt.ylabel("Loss")
-        #     plt.legend()
-        #     plt.grid(True)
-        #     plt.show()
+        # 📌 行为评估（考试式）
+        behavior_result = None
+        examiner = ExamManager(self.model, device=self.device, render=False)
+        behavior_result = examiner.run_exam(n_episodes=3)
+        print(f" Exam: distance={behavior_result['mean_distance']:.1f}, "
+              f"exp={behavior_result['exp']:.1f}, pass={behavior_result['pass_rate']:.2f}")
 
+
+
+        # 汇总日志
         test_log = {
             'Epoch': epoch,
             'Test Loss': test_loss,
@@ -256,17 +245,24 @@ class MarioTrainer(TrainBase):
             'Precision Std': prec_std,
             'Recall Std': rec_std,
             'F1 Score Std': f1_std,
-            'Test BC Loss': bc_loss,
-            'Test Penalty Loss': penalty_loss,
-            'Confusion Matrix': cm
+            'Confusion Matrix': cm,
         }
 
-        #  & early stopping
-        if test_acc > best_test_accuracy:
-            best_test_accuracy = test_acc
-            # no_improvement = 0
+        test_log.update({
+            "Mean Distance": behavior_result["mean_distance"],
+            "Pass Rate": behavior_result["pass_rate"],
+            "Exp": behavior_result["exp"]
+        })
+
+        # 🌟 按“行为指标”保存模型：仅当 mean_distance 更优时保存
+        save_model = False
+        if behavior_result:
+            save_model = behavior_result["mean_distance"] > best_mean_distance
+
+        if save_model:
+            best_mean_distance = behavior_result["mean_distance"]
             best_test_logs = test_log
             torch.save(self.model.state_dict(), self.best_model_path)
-            print(f"Best model saved with acc={test_acc:.2f}% → {self.best_model_path}")
+            print(f"Best model saved → {self.best_model_path}")
 
-        return test_log, best_test_logs, best_test_accuracy
+        return test_log, best_test_logs, best_mean_distance
